@@ -1,0 +1,303 @@
+﻿<html><head>
+		<meta name="viewport" content="user-scalable=no">
+		<title>martelo</title>
+		<style>
+			html,body{
+				width:100%;
+				height:100%;
+				margin:0;
+				padding:0;
+				overflow:hidden;
+			}
+			header,.container,.reloader{
+				position:absolute;
+				width:100%;
+				background-color:black;
+			}
+			header{
+				height:10%;
+				background:blue;
+				text-align:center;
+				font-size:30px;
+			}
+			header a:hover{
+				text-decoration:underline;
+			}
+			header a{
+				color:rgb(219, 176, 39);
+				text-decoration:none;
+			}
+			.container{
+				height:90%;
+				top:10%;
+			}
+			.container img{
+				position:absolute;
+				width:20%;
+				height:20%;
+				box-shadow: 0 0 3px white;
+				cursor:pointer;
+				-moz-transition:0.5s;
+			}
+			.container img:hover{
+				box-shadow: 0 0 10px white;
+			}
+			.reloader{
+				height:100%;
+				background-color:white;
+			}
+			.fim{
+				position:absolute;
+				top:10%;
+				left:10%;
+				width:80%;
+				height:80%;
+				background:green;
+				box-shadow:0 0 3px black;
+			}
+			.btn{
+				position:absolute;
+				width:30%;
+				height:15%;
+				background:white;
+				color:black;
+				text-align:center;
+				font-size:15pt;
+				font-family:Segoe UI;
+				cursor:pointer;
+				box-shadow:0 0 3px black;
+				border:1px solid gray;
+			}
+			.btn:hover{
+				box-shadow:0 0 10px black;
+			}
+			.btn[type='reload']{
+				top:55%;
+				left:35%;
+			}
+			.btn[type='save']{
+				top:30%;
+				left:35%;
+			}
+		</style>
+	</head>
+	<body>
+		<section class="reloader">
+			<section class="fim">
+				<span class="btn" type="reload">500PTs.<br>De novo?</span>
+				<span class="btn" type="save">Deseja salvar sua pontuação?</span>
+			</section>
+		</section>
+		<header>Pontuação: <span class="visor">0</span> || Tempo: <span class="visor">60</span> || Consecutivos: <span class="visor">0</span> || <a href="ranking.php">RANKING</a></header>
+		<section class="container">
+		</section>
+		<script language="javascript">
+			var types = ",-webkit-,-moz-,-o-,-ms-".split(",");
+			var btns = document.querySelectorAll(".btn");
+			var header = document.querySelector('header');
+			var container = document.querySelector('.container');
+			var reloader = document.querySelector('.reloader');
+			var visor = document.querySelectorAll('.visor');
+			var urls = new Array("imagem.jpg");
+			var qtd = 3;
+			var ponts = 0;
+			var acertos = 0;
+			var qtdTotal = 0;
+			var qtdTotal2 = 0;
+			var tempo = 60;
+			var tempoInicial = tempo;
+			var recorde = 0;
+			var xhr = new XMLHttpRequest();
+			var tmMaximo = 80;
+			var tmMinimo = 10;
+			function getUrl(){
+				var max = urls.length;
+				var code = Math.floor(random(0,max));
+				return "imagens/"+urls[code];
+			}
+			getUrl();
+			function sortPos(){
+				if(Math.floor(random(-1,1)) == -1) return "-"; else return "+";
+
+			}
+			function _save(){
+				var nome = prompt("Você fez "+ponts+" pontos. Qual seu nome?");
+				if(nome != null) _update(escape(nome),ponts);
+			}
+			function _update(nome,pontos){
+				var req = "nome="+nome+"&pontos="+pontos;
+				xhr.open("GET","rank.php?"+req,true);
+				xhr.send(null);
+				
+			}
+			function createCSS(code1,code2){
+				var finalStr = new String();;
+				for(var i=0;i<types.length;i++){
+					finalStr += types[i] + code1 + ": " + code2 + "; ";
+				}
+				return finalStr;
+			}
+			function random(max,min){
+				return Math.random() * (max - min) + min;
+			}
+			function randAngle(type){
+				return parseInt(random(0,45)) + type;
+			}
+			function relogio(){
+				tempo--;
+				visor[1].innerHTML =tempo;
+				if(tempo > 0){
+					setTimeout('relogio()',1000);
+				}
+				else _finalizar();
+			}
+			function atualizaPonts(pontuacao){
+				if(recorde<acertos) recorde = acertos;
+				console.debug(recorde);
+				ponts += pontuacao + recorde;
+				visor[0].innerHTML=ponts;
+			}
+			function atualizaConsec(){
+				visor[2].innerHTML = acertos;
+			}
+			function coord(){
+				coordenada = parseInt(Math.random()*100);
+				if(coordenada>tmMaximo || coordenada<tmMinimo) return coord();
+				else return coordenada;
+			}
+			function remover(){
+				if(tempoInicial == tempo)
+					relogio();
+				if(this.getAttribute('imgcode') != qtdTotal2){
+					acertos = 0;
+					atualizaConsec();
+					return false;
+				}
+				try{
+					this.remove();
+				}
+				catch(except){
+					this.style.display="none";
+				}
+				acertos += 1;
+				atualizaPonts(2*acertos*(tempo+acertos));
+				atualizaConsec();
+				qtdTotal--;
+				qtdTotal2--;
+				if(qtdTotal2>=0){
+					var imgAltera = document.querySelector('*[imgcode="'+qtdTotal2+'"]');
+					imgAltera.setAttribute('style',imgAltera.getAttribute('style')+" border:5px solid yellow;");
+				}
+				if(qtdTotal == 0) _construct();
+			}
+			function newImg(){
+				var img = document.createElement('img');
+				img.src = getUrl();
+				img.addEventListener('click',remover,false);
+				img.addEventListener('dragstart',remover,false);
+				img.addEventListener('touchstart',remover,false);
+				return img;
+			}
+			function _angleAumenta(angle){
+				angle+=random(10,20);
+				return angle+"deg";
+			}
+			function _giraImg(image){
+				var nm = image.style.cssText.split(";");
+				var cssAngle = nm[2].split("(");
+				var angleNum = parseInt(cssAngle[1].split(")")[0]);
+				console.debug(angleNum);
+				var txtFinal = nm[0]+";"+nm[1]+";"+cssAngle[0]+"("+_angleAumenta(angleNum)+");";
+				image.style.cssText=txtFinal;
+			}
+			function _movimenta(image){
+				var bool = image.style.cssText.search("yellow");
+				_giraImg(image);
+				if(bool!=-1) image.style.cssText = image.style.cssText+"border:5px solid yellow;";
+				var topo = parseInt(image.style.top.split('%')[0]);
+				var esquerda = parseInt(image.style.left.split('%')[0]);
+				var limitemax = 70;
+				var limitemin = 10;
+				var vtop = parseInt(image.getAttribute('topv'));
+				var vleft = parseInt(image.getAttribute('leftv'));
+				if(topo+vtop <= tmMaximo){
+					image.style.top = topo + vtop +"%";
+					if(topo+vtop >= tmMinimo){
+						image.style.top = topo + vtop +"%";
+						
+					}
+					else{
+						image.style.top = topo - vtop +"%";
+						image.setAttribute('topv',vtop*(-1));
+					}
+				}
+				else{
+					image.style.top = topo - vtop +"%";
+					image.setAttribute('topv',vtop*(-1));
+				}
+				
+				if(esquerda+vleft <= tmMaximo){
+					image.style.left = esquerda + vleft +"%";
+					if(esquerda+vleft >= tmMinimo){
+						image.style.left = esquerda + vleft +"%";
+						
+					}
+					else{
+						image.style.left = esquerda - vleft +"%";
+						image.setAttribute('leftv',vleft*(-1));
+					}
+				}
+				else{
+					image.style.left = esquerda - vleft +"%";
+					image.setAttribute('leftv',vleft*(-1));
+				}
+				if(document.querySelector("img[i='"+image.getAttribute('i')+"']")){
+					var funct = "_movimenta(document.querySelector(\"img[i='"+image.getAttribute('i')+"']\"));";
+					setTimeout(funct,200);
+				}
+			}
+			function _construct(){
+				var cx = 0;
+				var cy = 0;
+				var img = null;
+				for(var i=0;i<qtd;i++){
+					cx = coord();
+					cy = coord();
+					img = newImg();
+					img.setAttribute('style','top:'+cx+'%;left:'+cy+'%;'+createCSS("transform","rotate("+randAngle("deg")+")"));
+					img.setAttribute('imgCode',i);
+					img.setAttribute('topv',sortPos()+parseFloat(1+(random(1,10)/random(1,5))));
+					img.setAttribute('leftv',sortPos()+parseFloat(1+(random(1,10)/random(1,5))));
+	
+					img.setAttribute('i',i);
+					container.appendChild(img);
+					_movimenta(img);
+				}
+				qtdTotal = qtd;
+				qtdTotal2 = qtd-1;
+				var imgAltera = document.querySelector('*[imgcode="'+qtdTotal2+'"]');
+				imgAltera.setAttribute('style',img.getAttribute('style')+" border:5px solid yellow;");
+				qtd += 2;
+			}
+			function _finalizar(){
+				try{
+					header.remove();
+					container.remove();
+				}
+				catch(exc){
+					var teste = reloader.cloneNode();
+					document.body.innerHTML = "";
+					document.body.appendChild(teste);
+				}
+				var btns = document.querySelectorAll(".btn");
+				btns[0].innerHTML = ponts+"pts. <br/> De novo?";
+				btns[0].addEventListener('click',function(){location.href = location.href;},false);
+				btns[1].addEventListener('click',_save,false);
+			}
+			_construct();
+		</script>
+	
+
+
+	</body>
+</html>
